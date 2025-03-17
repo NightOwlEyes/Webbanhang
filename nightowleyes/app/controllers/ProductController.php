@@ -44,21 +44,34 @@ class ProductController
             $description = $_POST['description'] ?? '';
             $price = $_POST['price'] ?? '';
             $category_id = $_POST['category_id'] ?? null;
+            $care_guide = $_POST['care_guide'] ?? '';
+            $sunlight = $_POST['sunlight'] ?? '';
+            $water = $_POST['water'] ?? '';
+            $size = $_POST['size'] ?? '';
+            $stock = $_POST['stock'] ?? 10;
 
-            if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $image = $this->uploadImage($_FILES['image']);
-            } else {
-                $image = "";
-            }
+            try {
+                if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+                    $image = $this->uploadImage($_FILES['image']);
+                } else {
+                    $image = "";
+                }
 
-            $result = $this->productModel->addProduct($name, $description, $price, $category_id, $image);
+                $result = $this->productModel->addProduct($name, $description, $price, $category_id, $image, $care_guide, $sunlight, $water, $size, $stock);
 
-            if (is_array($result)) {
-                $errors = $result;
+                if (is_array($result)) {
+                    $errors = $result;
+                    $categories = (new CategoryModel($this->db))->getCategories();
+                    include 'app/views/product/add.php';
+                } else {
+                    $_SESSION['success'] = "Sản phẩm đã được thêm thành công.";
+                    header('Location: /nightowleyes/Product');
+                    exit;
+                }
+            } catch (Exception $e) {
+                $errors = ['image' => $e->getMessage()];
                 $categories = (new CategoryModel($this->db))->getCategories();
                 include 'app/views/product/add.php';
-            } else {
-                header('Location: /nightowleyes/Product');
             }
         }
     }
@@ -83,30 +96,63 @@ class ProductController
             $description = $_POST['description'];
             $price = $_POST['price'];
             $category_id = $_POST['category_id'];
+            $care_guide = $_POST['care_guide'] ?? '';
+            $sunlight = $_POST['sunlight'] ?? '';
+            $water = $_POST['water'] ?? '';
+            $size = $_POST['size'] ?? '';
+            $stock = $_POST['stock'] ?? 10;
 
-            if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $image = $this->uploadImage($_FILES['image']);
-            } else {
-                $image = $_POST['existing_image'];
-            }
+            try {
+                if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+                    $image = $this->uploadImage($_FILES['image']);
+                } else {
+                    $image = $_POST['existing_image'];
+                }
 
-            $edit = $this->productModel->updateProduct($id, $name, $description, $price, $category_id, $image);
+                $edit = $this->productModel->updateProduct($id, $name, $description, $price, $category_id, $image, $care_guide, $sunlight, $water, $size, $stock);
 
-            if ($edit) {
-                header('Location: /nightowleyes/Product');
-            } else {
-                echo "Đã xảy ra lỗi khi lưu sản phẩm.";
+                if ($edit) {
+                    $_SESSION['success'] = "Sản phẩm đã được cập nhật thành công.";
+                    header('Location: /nightowleyes/Product');
+                    exit;
+                } else {
+                    $_SESSION['error'] = "Đã xảy ra lỗi khi lưu sản phẩm.";
+                    header('Location: /nightowleyes/Product/edit/' . $id);
+                    exit;
+                }
+            } catch (Exception $e) {
+                $_SESSION['error'] = $e->getMessage();
+                header('Location: /nightowleyes/Product/edit/' . $id);
+                exit;
             }
         }
     }
 
     public function delete($id)
     {
-        if ($this->productModel->deleteProduct($id)) {
+        // Kiểm tra xem sản phẩm có tồn tại không
+        $product = $this->productModel->getProductById($id);
+        
+        if (!$product) {
+            // Sản phẩm không tồn tại
+            $_SESSION['error'] = "Sản phẩm không tồn tại hoặc đã bị xóa.";
             header('Location: /nightowleyes/Product');
-        } else {
-            echo "Đã xảy ra lỗi khi xóa sản phẩm.";
+            exit;
         }
+        
+        // Thực hiện xóa sản phẩm
+        $result = $this->productModel->deleteProduct($id);
+        
+        if ($result) {
+            // Xóa thành công
+            $_SESSION['success'] = "Sản phẩm đã được xóa thành công.";
+        } else {
+            // Xóa thất bại
+            $_SESSION['error'] = "Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại.";
+        }
+        
+        header('Location: /nightowleyes/Product');
+        exit;
     }
 
     private function uploadImage($file)
@@ -133,8 +179,8 @@ class ProductController
         }
 
         // Chỉ cho phép một số định dạng hình ảnh nhất định
-        if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif") {
-            throw new Exception("Chỉ cho phép các định dạng JPG, JPEG, PNG và GIF.");
+        if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif" && $imageFileType != "webp") {
+            throw new Exception("Chỉ cho phép các định dạng JPG, JPEG, PNG, GIF và WEBP.");
         }
 
         // Lưu file
