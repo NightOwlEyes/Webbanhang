@@ -6,6 +6,14 @@ include 'app/views/shares/header.php';
 ?>
 
 <div class="container mt-4">
+    <?php if (isset($_SESSION['login_message'])): ?>
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <?php echo $_SESSION['login_message']; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['login_message']); ?>
+    <?php endif; ?>
+
     <h1 class="text-center mb-4">Danh sách sản phẩm</h1>
     
     <?php if (isset($_SESSION['success'])): ?>
@@ -44,35 +52,14 @@ include 'app/views/shares/header.php';
                                 </a>
                             </h5>
 
-                            <p class="card-text text-muted small">
-                                <?php echo mb_substr(htmlspecialchars($product->description, ENT_QUOTES, 'UTF-8'), 0, 100) . '...'; ?>
-                            </p>
-
-                            <p class="fw-bold text-success">Giá:
+                            <p class="fw-bold text-success mb-2">Giá:
                                 <?php echo number_format($product->price, 0, ',', '.'); ?> VND
                             </p>
 
-                            <div class="plant-info small">
-                                <?php if (!empty($product->sunlight)): ?>
-                                <p class="mb-1"><i class="fas fa-sun text-warning"></i> Ánh sáng: <?php echo htmlspecialchars($product->sunlight, ENT_QUOTES, 'UTF-8'); ?></p>
-                                <?php endif; ?>
-                                
-                                <?php if (!empty($product->water)): ?>
-                                <p class="mb-1"><i class="fas fa-tint text-primary"></i> Nước: <?php echo htmlspecialchars($product->water, ENT_QUOTES, 'UTF-8'); ?></p>
-                                <?php endif; ?>
-                                
-                                <?php if (!empty($product->size)): ?>
-                                <p class="mb-1"><i class="fas fa-ruler text-secondary"></i> Kích thước: <?php echo htmlspecialchars($product->size, ENT_QUOTES, 'UTF-8'); ?></p>
-                                <?php endif; ?>
-                                
-                                <p class="mb-1"><i class="fas fa-layer-group text-info"></i> Danh mục: 
-                                    <?php echo htmlspecialchars($product->category_name, ENT_QUOTES, 'UTF-8'); ?>
-                                </p>
-                                
-                                <p class="mb-1"><i class="fas fa-boxes text-danger"></i> Còn lại: 
-                                    <?php echo htmlspecialchars($product->stock, ENT_QUOTES, 'UTF-8'); ?> cây
-                                </p>
-                            </div>
+                            <a href="/nightowleyes/Product/show/<?php echo $product->id; ?>" 
+                               class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-info-circle"></i> Xem chi tiết
+                            </a>
                         </div>
 
                         <div class="card-footer bg-white">

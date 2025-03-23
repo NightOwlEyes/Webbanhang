@@ -96,14 +96,22 @@ class AccountController {
                     
                     error_log("User logged in: " . $account->username);
                     
+                    if ($account->role === 'admin') {
+                        $_SESSION['login_message'] = "Bạn đang đăng nhập với tư cách quản trị viên";
+                    }
+                    
                     header('Location: /nightowleyes/product');
                     exit;
                 } else {
-                    echo "Password incorrect.";
+                    $_SESSION['login_error'] = "Mật khẩu không chính xác";
+                    header('Location: /nightowleyes/account/login');
+                    exit;
                 }
             } else {
-                echo "Bao loi khong tim thay tai khoan";
+                $_SESSION['login_error'] = "Tài khoản không tồn tại";
+                header('Location: /nightowleyes/account/login'); 
+                exit;
             }
         }
     }
-} 
+}

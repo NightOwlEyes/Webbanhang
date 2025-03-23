@@ -159,7 +159,6 @@ class ProductController
     {
         $target_dir = "uploads/";
 
-        // Kiểm tra và tạo thư mục nếu chưa tồn tại
         if (!is_dir($target_dir)) {
             mkdir($target_dir, 0777, true);
         }
@@ -167,24 +166,24 @@ class ProductController
         $target_file = $target_dir . basename($file["name"]);
         $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
-        // Kiểm tra xem file có phải là hình ảnh không
         $check = getimagesize($file["tmp_name"]);
         if ($check === false) {
+            $_SESSION['upload_error'] = "File tải lên không phải là hình ảnh hợp lệ";
             throw new Exception("File không phải là hình ảnh.");
         }
 
-        // Kiểm tra kích thước file (10 MB = 10 * 1024 * 1024 bytes)
         if ($file["size"] > 10 * 1024 * 1024) {
+            $_SESSION['upload_error'] = "File không được vượt quá 10MB";
             throw new Exception("Hình ảnh có kích thước quá lớn.");
         }
 
-        // Chỉ cho phép một số định dạng hình ảnh nhất định
         if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif" && $imageFileType != "webp") {
-            throw new Exception("Chỉ cho phép các định dạng JPG, JPEG, PNG, GIF và WEBP.");
+            $_SESSION['upload_error'] = "Chỉ chấp nhận các file: JPG, JPEG, PNG, GIF và WEBP";
+            throw new Exception("Định dạng file không được hỗ trợ.");
         }
 
-        // Lưu file
         if (!move_uploaded_file($file["tmp_name"], $target_file)) {
+            $_SESSION['upload_error'] = "Có lỗi xảy ra khi tải file lên server";
             throw new Exception("Có lỗi xảy ra khi tải lên hình ảnh.");
         }
 
@@ -194,9 +193,10 @@ class ProductController
     public function addToCart($id)
     {
         $product = $this->productModel->getProductById($id);
+        $quantity = isset($_GET['quantity']) ? (int)$_GET['quantity'] : 1; // Lấy số lượng từ request
 
         if (!$product) {
-             header('Content-Type: application/json'); // Set header for JSON response
+            header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Không tìm thấy sản phẩm.']);
             return;
         }
@@ -206,26 +206,25 @@ class ProductController
         }
 
         if (isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id]['quantity']++;
+            $_SESSION['cart'][$id]['quantity'] += $quantity; // Cộng dồn với số lượng mới
         } else {
             $_SESSION['cart'][$id] = [
                 'name' => $product->name,
                 'price' => $product->price,
-                'quantity' => 1,
+                'quantity' => $quantity,  // Sử dụng số lượng từ request
                 'image' => $product->image
             ];
         }
 
-        // Calculate the new cart count
+        // Tính tổng số lượng trong giỏ hàng
         $cart_count = 0;
         foreach ($_SESSION['cart'] as $item) {
             $cart_count += $item['quantity'];
         }
 
-        // Return a JSON response
-        header('Content-Type: application/json'); // Make sure to set the content type!
+        header('Content-Type: application/json');
         echo json_encode(['success' => true, 'cartCount' => $cart_count]);
-        exit;  // Stop further execution. VERY IMPORTANT.
+        exit;
     }
 
     public function cart()

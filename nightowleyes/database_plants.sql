@@ -14,7 +14,6 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
-
 -- Dumping database structure for plant_store
 CREATE DATABASE IF NOT EXISTS `plant_store` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `plant_store`;
@@ -26,9 +25,32 @@ CREATE TABLE IF NOT EXISTS `account` (
   `fullname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `role` enum('admin','user') COLLATE utf8mb4_unicode_ci DEFAULT 'user',
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `last_login` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Sửa lại bảng account_logs
+CREATE TABLE IF NOT EXISTS `account_logs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `action` varchar(50) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `details` text,
+  `timestamp` timestamp DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Sửa lại trigger với thêm thông tin debug
+DELIMITER //
+CREATE TRIGGER after_account_insert 
+AFTER INSERT ON account
+FOR EACH ROW 
+BEGIN
+    INSERT INTO account_logs (action, username, details) 
+    VALUES ('INSERT', NEW.username, CONCAT('Role: ', NEW.role, ', Created at: ', NEW.created_at));
+END//
+DELIMITER ;
 
 -- Dumping data for table plant_store.account: ~0 rows (approximately)
 
@@ -71,7 +93,8 @@ CREATE TABLE IF NOT EXISTS `order_details` (
   `price` decimal(10,2) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
-  CONSTRAINT `order_details_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`)
+  CONSTRAINT `order_details_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
+  CONSTRAINT `order_details_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table plant_store.order_details: ~0 rows (approximately)

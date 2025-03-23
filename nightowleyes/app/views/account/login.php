@@ -4,6 +4,18 @@
     <div class="container py-5 h-100">
         <div class="row d-flex justify-content-center align-items-center h-100">
             <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <?php if (isset($_SESSION['login_error'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert" id="errorAlert">
+                        <?php 
+                            echo $_SESSION['login_error'];
+                            unset($_SESSION['login_error']); 
+                        ?>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                <?php endif; ?>
+
                 <div class="card bg-dark text-white" style="border-radius: 1rem;">
                     <div class="card-body p-5 text-center">
                         <form action="/nightowleyes/account/checklogin" method="post">
@@ -47,4 +59,19 @@
     </div>
 </section>
 
-<?php include 'app/views/shares/footer.php'; ?> 
+<script>
+// Tự động ẩn thông báo sau 3 giây
+document.addEventListener('DOMContentLoaded', function() {
+    var errorAlert = document.getElementById('errorAlert');
+    if (errorAlert) {
+        setTimeout(function() {
+            errorAlert.classList.remove('show');
+            setTimeout(function() {
+                errorAlert.remove();
+            }, 150);
+        }, 3000);
+    }
+});
+</script>
+
+<?php include 'app/views/shares/footer.php'; ?>
