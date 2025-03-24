@@ -3,6 +3,16 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 include 'app/views/shares/header.php';
+
+$cart_count = 0;
+if (SessionHelper::isLoggedIn()) {
+    $username = $_SESSION['username'];
+    if (isset($_SESSION['cart'][$username])) {
+        foreach ($_SESSION['cart'][$username] as $item) {
+            $cart_count += $item['quantity'];
+        }
+    }
+}
 ?>
 
 <div class="container mt-4">
@@ -63,17 +73,17 @@ include 'app/views/shares/header.php';
                         </div>
 
                         <div class="card-footer bg-white">
-                            <a href="/nightowleyes/Product/edit/<?php echo $product->id; ?>"
-                               class="btn btn-warning btn-sm">
-                                ✏️ Sửa
-                            </a>
-
-                            <a href="/nightowleyes/Product/delete/<?php echo $product->id; ?>"
-                               class="btn btn-danger btn-sm"
-                               onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
-                                ❌ Xóa
-                            </a>
-
+                            <?php if (SessionHelper::isAdmin()): ?>
+                                <a href="/nightowleyes/Product/edit/<?php echo $product->id; ?>"
+                                   class="btn btn-warning btn-sm">
+                                    ✏️ Sửa
+                                </a>
+                                <a href="/nightowleyes/Product/delete/<?php echo $product->id; ?>"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
+                                    ❌ Xóa
+                                </a>
+                            <?php endif; ?>
                             <button class="btn btn-primary btn-sm float-end add-to-cart-btn"
                                     data-product-id="<?php echo $product->id; ?>">
                                 🛒 Thêm vào giỏ hàng

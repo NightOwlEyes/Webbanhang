@@ -59,15 +59,17 @@
 
                 <!-- Các nút điều khiển -->
                 <div class="mt-4">
-                    <a href="/nightowleyes/Product/edit/<?= htmlspecialchars($product->id ?? '', ENT_QUOTES, 'UTF-8'); ?>" 
-                       class="btn btn-warning">
-                        <i class="fas fa-edit"></i> Sửa
-                    </a>
-                    <a href="/nightowleyes/Product/delete/<?= htmlspecialchars($product->id ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                       class="btn btn-danger"
-                       onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
-                        <i class="fas fa-trash"></i> Xóa
-                    </a>
+                    <?php if (SessionHelper::isAdmin()): ?>
+                        <a href="/nightowleyes/Product/edit/<?= htmlspecialchars($product->id ?? '', ENT_QUOTES, 'UTF-8'); ?>" 
+                           class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Sửa
+                        </a>
+                        <a href="/nightowleyes/Product/delete/<?= htmlspecialchars($product->id ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                           class="btn btn-danger"
+                           onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
+                            <i class="fas fa-trash"></i> Xóa
+                        </a>
+                    <?php endif; ?>
                     <a href="/nightowleyes/Product" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Quay lại danh sách
                     </a>
@@ -178,7 +180,7 @@ $(document).ready(function() {
         $.ajax({
             url: '/nightowleyes/Product/addToCart/' + productId,
             type: 'GET',
-            data: { quantity: quantity },
+            data: { quantity: quantity, username: '<?= $_SESSION['username'] ?? '' ?>' },
             dataType: 'json',
             success: function(response) {
                 if (response && response.success) {
@@ -186,7 +188,7 @@ $(document).ready(function() {
                     $('#addToCartModal').modal('hide');
                     alert('Sản phẩm đã được thêm vào giỏ hàng!');
                 } else {
-                    alert('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.');
+                    alert(response.message || 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.');
                 }
             },
             error: function(xhr, status, error) {

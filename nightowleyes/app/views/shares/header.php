@@ -69,27 +69,42 @@ if (session_status() === PHP_SESSION_NONE) {
     <div class="collapse navbar-collapse" id="navbarNav">
         <!-- Left side menu items -->
         <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="/nightowleyes/Product/">Danh sách sản phẩm</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/nightowleyes/Product/add">Thêm sản phẩm</a>
-            </li>
-            <li class="nav-item">
-                <!-- Cart Icon with Count -->
-                <a class="nav-link cart-icon" href="/nightowleyes/Product/cart">
-                    <i class="fas fa-shopping-cart"></i>
-                    <?php
+            <?php if (SessionHelper::isLoggedIn()): ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="/nightowleyes/Product/">Danh sách sản phẩm</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/nightowleyes/Product/add">Thêm sản phẩm</a>
+                </li>
+                <li class="nav-item">
+                    <!-- Cart Icon with Count -->
+                    <a class="nav-link cart-icon" href="/nightowleyes/Product/cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <?php
+                        // Ensure session is started
+                        if (session_status() === PHP_SESSION_NONE) {
+                            session_start();
+                        }
+
+                        // Initialize cart count
                         $cart_count = 0;
-                        if (isset($_SESSION['cart'])) {
-                            foreach ($_SESSION['cart'] as $item) {
-                                $cart_count += $item['quantity'];
+
+                        // Check if the user is logged in
+                        if (SessionHelper::isLoggedIn()) {
+                            $username = $_SESSION['username'] ?? null;
+
+                            // Check if the cart exists for the logged-in user
+                            if ($username && isset($_SESSION['cart'][$username])) {
+                                foreach ($_SESSION['cart'][$username] as $item) {
+                                    $cart_count += $item['quantity'] ?? 0; // Use null coalescing to avoid warnings
+                                }
                             }
                         }
-                    ?>
-                    <span class="cart-count"><?= $cart_count ?></span>
-                </a>
-            </li>
+                        ?>
+                        <span class="cart-count"><?= $cart_count ?></span>
+                    </a>
+                </li>
+            <?php endif; ?>
         </ul>
         
         <!-- Right side user info -->

@@ -1,5 +1,10 @@
 <?php include 'app/views/shares/header.php'; ?>
 
+<?php
+    $username = $_SESSION['username'] ?? null;
+    $cart = $username && isset($_SESSION['cart'][$username]) ? $_SESSION['cart'][$username] : [];
+?>
+
 <div class="container mt-5">
     <h1 class="text-center text-primary">🛒 Giỏ hàng của bạn</h1>
 
@@ -35,10 +40,11 @@
                                     <p class="card-text"><strong>Thành tiền:</strong> <span class="text-danger"><?= number_format($subtotal, 0, ',', '.'); ?> VND</span></p>
 
                                     <div class="d-flex gap-2">
-                                        <a href="/nightowleyes/Product/removeFromCart/<?= $id; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
+                                        <a href="/nightowleyes/Product/removeFromCart/<?= $id; ?>" 
+                                           class="btn btn-danger btn-sm" 
+                                           onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
                                             <i class="fas fa-trash-alt"></i> Xóa
                                         </a>
-                                       <!--  Removed Update Button -->
                                     </div>
                                 </div>
                             </div>

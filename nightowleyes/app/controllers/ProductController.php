@@ -33,12 +33,24 @@ class ProductController
 
     public function add()
     {
+        if (!SessionHelper::isAdmin()) {
+            $_SESSION['error'] = "Bạn không có quyền truy cập vào trang này.";
+            header('Location: /nightowleyes/Product');
+            exit;
+        }
+
         $categories = (new CategoryModel($this->db))->getCategories();
         include_once 'app/views/product/add.php';
     }
 
     public function save()
     {
+        if (!SessionHelper::isAdmin()) {
+            $_SESSION['error'] = "Bạn không có quyền thực hiện hành động này.";
+            header('Location: /nightowleyes/Product');
+            exit;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $name = $_POST['name'] ?? '';
             $description = $_POST['description'] ?? '';
@@ -78,6 +90,12 @@ class ProductController
 
     public function edit($id)
     {
+        if (!SessionHelper::isAdmin()) {
+            $_SESSION['error'] = "Bạn không có quyền truy cập vào trang này.";
+            header('Location: /nightowleyes/Product');
+            exit;
+        }
+
         $product = $this->productModel->getProductById($id);
         $categories = (new CategoryModel($this->db))->getCategories();
 
@@ -90,6 +108,12 @@ class ProductController
 
     public function update()
     {
+        if (!SessionHelper::isAdmin()) {
+            $_SESSION['error'] = "Bạn không có quyền thực hiện hành động này.";
+            header('Location: /nightowleyes/Product');
+            exit;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'];
             $name = $_POST['name'];
@@ -130,27 +154,31 @@ class ProductController
 
     public function delete($id)
     {
-        // Kiểm tra xem sản phẩm có tồn tại không
+        if (!SessionHelper::isAdmin()) {
+            $_SESSION['error'] = "Bạn không có quyền thực hiện hành động này.";
+            header('Location: /nightowleyes/Product');
+            exit;
+        }
+
+        // Validate the product ID
+        $id = intval($id);
         $product = $this->productModel->getProductById($id);
-        
+
         if (!$product) {
-            // Sản phẩm không tồn tại
             $_SESSION['error'] = "Sản phẩm không tồn tại hoặc đã bị xóa.";
             header('Location: /nightowleyes/Product');
             exit;
         }
-        
-        // Thực hiện xóa sản phẩm
+
+        // Attempt to delete the product
         $result = $this->productModel->deleteProduct($id);
-        
+
         if ($result) {
-            // Xóa thành công
             $_SESSION['success'] = "Sản phẩm đã được xóa thành công.";
         } else {
-            // Xóa thất bại
             $_SESSION['error'] = "Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại.";
         }
-        
+
         header('Location: /nightowleyes/Product');
         exit;
     }
@@ -193,7 +221,14 @@ class ProductController
     public function addToCart($id)
     {
         $product = $this->productModel->getProductById($id);
-        $quantity = isset($_GET['quantity']) ? (int)$_GET['quantity'] : 1; // Lấy số lượng từ request
+        $quantity = isset($_GET['quantity']) ? (int)$_GET['quantity'] : 1;
+        $username = $_SESSION['username'] ?? null;
+
+        if (!$username) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Bạn cần đăng nhập để thêm vào giỏ hàng.']);
+            return;
+        }
 
         if (!$product) {
             header('Content-Type: application/json');
@@ -201,25 +236,33 @@ class ProductController
             return;
         }
 
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [];
+        if (!isset($_SESSION['cart'][$username])) {
+            $_SESSION['cart'][$username] = [];
         }
 
-        if (isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id]['quantity'] += $quantity; // Cộng dồn với số lượng mới
+        $currentQuantity = $_SESSION['cart'][$username][$id]['quantity'] ?? 0;
+        $newQuantity = $currentQuantity + $quantity;
+
+        if ($newQuantity > $product->stock) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Số lượng vượt quá tồn kho.']);
+            return;
+        }
+
+        if (isset($_SESSION['cart'][$username][$id])) {
+            $_SESSION['cart'][$username][$id]['quantity'] = $newQuantity;
         } else {
-            $_SESSION['cart'][$id] = [
+            $_SESSION['cart'][$username][$id] = [
                 'name' => $product->name,
                 'price' => $product->price,
-                'quantity' => $quantity,  // Sử dụng số lượng từ request
+                'quantity' => $quantity,
                 'image' => $product->image
             ];
         }
 
-        // Tính tổng số lượng trong giỏ hàng
         $cart_count = 0;
-        foreach ($_SESSION['cart'] as $item) {
-            $cart_count += $item['quantity'];
+        foreach ($_SESSION['cart'][$username] as $item) {
+            $cart_count += $item['quantity'] ?? 0;
         }
 
         header('Content-Type: application/json');
@@ -302,16 +345,18 @@ class ProductController
     {
         if ($_SERVER["REQUEST_METHOD"] == "GET") {
             $action = $_GET['action'] ?? null; // Get the 'action' parameter
+            $username = $_SESSION['username'] ?? null;
 
-            // Validate the ID to prevent potential issues
-            $id = intval($id);
+            if (!$username || !isset($_SESSION['cart'][$username][$id])) {
+                header('Location: /nightowleyes/Product/cart');
+                exit();
+            }
 
-            if (isset($_SESSION['cart'][$id])) {
-                if ($action == 'increase') {
-                    $_SESSION['cart'][$id]['quantity']++;
-                } elseif ($action == 'decrease' && $_SESSION['cart'][$id]['quantity'] > 1) {  // Prevent quantity from going below 1
-                    $_SESSION['cart'][$id]['quantity']--;
-                }
+            // Update the quantity based on the action
+            if ($action == 'increase') {
+                $_SESSION['cart'][$username][$id]['quantity']++;
+            } elseif ($action == 'decrease' && $_SESSION['cart'][$username][$id]['quantity'] > 1) {
+                $_SESSION['cart'][$username][$id]['quantity']--;
             }
 
             // Redirect back to the cart page
@@ -322,12 +367,15 @@ class ProductController
 
     public function removeFromCart($id)
     {
-        // Validate the ID to prevent potential issues
-        $id = intval($id);
+        $username = $_SESSION['username'] ?? null;
 
-        if (isset($_SESSION['cart'][$id])) {
-            unset($_SESSION['cart'][$id]);
+        if (!$username || !isset($_SESSION['cart'][$username][$id])) {
+            header('Location: /nightowleyes/Product/cart');
+            exit();
         }
+
+        unset($_SESSION['cart'][$username][$id]);
+
         header('Location: /nightowleyes/Product/cart');
         exit();
     }
